@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مطعم شموسة - نظام الكاشير</title>
+    
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa; 
+            direction: rtl; 
+            text-align: right;
+        }
+
+        header {
+            background-color: #2c3e50; 
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        /* تنسيق اسم المطعم */
+        header h1 {
+            margin-bottom: 5px;
+        }
+        
+        header p {
+            font-size: 1.2em;
+            margin-top: 0;
+        }
+
+        .container {
+            display: flex;
+            max-width: 1200px;
+            margin: 20px auto;
+            background-color: white;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+            min-height: 85vh;
+        }
+
+        /* قائمة الأصناف */
+        .product-menu {
+            flex: 2;
+            padding: 20px;
+            border-left: 1px solid #eee;
+        }
+
+        .category {
+            margin-bottom: 20px;
+            padding: 10px;
+            border-bottom: 2px solid #ddd;
+        }
+
+        /* تنسيق الأزرار مع الصور */
+        .item-btn {
+            background-color: #e67e22; 
+            color: white;
+            border: none;
+            padding: 10px;
+            margin: 6px;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: background-color 0.3s, transform 0.1s;
+            font-size: 14px;
+            
+            display: inline-flex; 
+            align-items: center;
+            min-width: 150px;
+            max-width: 48%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .item-btn:hover {
+            background-color: #d35400; 
+            transform: translateY(-2px);
+        }
+
+        .product-icon {
+            width: 45px; 
+            height: 45px;
+            margin-left: 10px;
+            border-radius: 4px;
+            object-fit: cover;
+            border: 1px solid #fff;
+        }
+        
+        .product-info {
+            text-align: right;
+            line-height: 1.4;
+        }
+
+        .product-name {
+            font-weight: bold;
+            display: block;
+        }
+        
+        .product-price {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        /* سلة الطلبات */
+        .order-cart {
+            flex: 1;
+            padding: 20px;
+            background-color: #ecf0f1; 
+        }
+
+        #order-items div {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px dashed #b3b3b3;
+        }
+        
+        .summary {
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 2px solid #2c3e50;
+        }
+
+        .summary h3 {
+            color: #c0392b;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 15px;
+            background-color: #2ecc71; 
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 17px;
+            border-radius: 6px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #27ae60;
+        }
+
+        .clear-btn {
+            background-color: #f39c12; 
+        }
+        .clear-btn:hover {
+            background-color: #e67e22;
+        }
+        
+        /* إخفاء سطر الضريبة */
+        .tax-row {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>مطعم شموسة</h1>
+        <p>نظام نقاط البيع (POS)</p>
+    </header>
+
+    <div class="container">
+        <div class="product-menu">
+            <h2>قائمة الأصناف</h2>
+            <div id="meals-list" class="category"><h3>الوجبات</h3></div>
+            <div id="salads-list" class="category"><h3>السلطات والمقبلات</h3></div>
+            <div id="drinks-list" class="category"><h3>المشروبات</h3></div>
+            <div id="add-ons-list" class="category"><h3>الصوصات والإضافات</h3></div>
+        </div>
+
+        <div class="order-cart">
+            <h2>الطلب الحالي</h2>
+            <div id="order-items">
+                </div>
+
+            <div class="summary">
+                <p>الإجمالي الفرعي: <span id="subtotal">0.00</span> د.ع</p>
+                <p class="tax-row">الضريبة: <span id="tax">0.00</span> د.ع</p> <h3>المجموع الكلي: <span id="grand-total">0.00</span> د.ع</h3>
+            </div>
+
+            <button onclick="processOrder()">إنهاء الطلب والدفع</button>
+            <button onclick="clearOrder()" class="clear-btn">مسح الطلب</button>
+        </div>
+    </div>
+
+    <script>
+        // 1. تعريف قائمة المنتجات بالأسعار والتعديلات الجديدة
+        const products = {
+            meals: [
+                { name: "بركر لحم", price: 6.00, id: 'M1', image: 'images/burger_beef.jpg' },
+                { name: "بركر دجاج", price: 5.50, id: 'M2', image: 'images/burger_chicken.jpg' },
+                { name: "هوت دوغ", price: 3.50, id: 'M3', image: 'images/hotdog.jpg' },
+                { name: "تكساس فرايز", price: 5.00, id: 'M4', image: 'images/texas_fries.jpg' },
+                { name: "كنتاكي 3 قطع", price: 6.00, id: 'M5', image: 'images/kentucky.jpg' },
+                { name: "ستربس 3 قطع", price: 5.00, id: 'M6', image: 'images/strips.jpg' },
+                { name: "بيتزا مارغريتا", price: 10.00, id: 'M7', image: 'images/pizza.jpg' }
+            ],
+            salads: [
+                { name: "سيزر سلاط", price: 4.50, id: 'S1', image: 'images/caesar_salad.jpg' },
+                { name: "سلطة جرجير", price: 3.00, id: 'S2', image: 'images/arugula_salad.jpg' },
+                { name: "تبولة", price: 3.00, id: 'S3', image: 'images/tabbouleh.jpg' },
+                { name: "حمص", price: 2.50, id: 'S4', image: 'images/hummus.jpg' }
+            ],
+            drinks: [
+                { name: "كولا", price: 0.50, id: 'D1', image: 'images/cola.jpg' }
+            ],
+            addOns: [
+                { name: "صلصة ثومية", price: 0.50, id: 'A1', image: 'images/garlic_sauce.jpg' },
+                { name: "باربكيو", price: 0.50, id: 'A2', image: 'images/bbq_sauce.jpg' },
+                { name: "هاني ماسترد", price: 0.50, id: 'A3', image: 'images/honey_mustard.jpg' }
+            ]
+        };
+
+        let currentOrder = []; 
+        // تم حذف متغير TAX_RATE
+
+        function renderProducts() {
+            const mealsContainer = document.getElementById('meals-list');
+            const saladsContainer = document.getElementById('salads-list'); 
+            const drinksContainer = document.getElementById('drinks-list');
+            const addOnsContainer = document.getElementById('add-ons-list');
+
+            products.meals.forEach(meal => {
+                mealsContainer.appendChild(createProductButton(meal, 'meal'));
+            });
+            
+            products.salads.forEach(salad => { 
+                saladsContainer.appendChild(createProductButton(salad, 'salad'));
+            });
+
+            products.drinks.forEach(drink => {
+                drinksContainer.appendChild(createProductButton(drink, 'drink'));
+            });
+
+            products.addOns.forEach(addOn => {
+                addOnsContainer.appendChild(createProductButton(addOn, 'addOn'));
+            });
+        }
+
+        function createProductButton(product, type) {
+            const button = document.createElement('button');
+            button.className = 'item-btn';
+            
+            const imgHtml = product.image 
+                ? `<img src="${product.image}" alt="${product.name}" class="product-icon" onerror="this.style.display='none'">` 
+                : ''; 
+
+            button.innerHTML = `
+                ${imgHtml}
+                <div class="product-info">
+                    <span class="product-name">${product.name}</span>
+                    <span class="product-price">${product.price.toFixed(2)} د.ع</span>
+                </div>
+            `;
+            button.onclick = () => addItemToOrder(product, type);
+            return button;
+        }
+
+        function addItemToOrder(item, type) {
+            const existingItem = currentOrder.find(i => i.id === item.id);
+
+            if (existingItem) {
+                existingItem.quantity++;
+            } else {
+                currentOrder.push({
+                    id: item.id,
+                    name: item.name,
+                    price: item.price,
+                    quantity: 1,
+                    type: type
+                });
+            }
+
+            updateOrderCart();
+        }
+
+        function updateOrderCart() {
+            const orderItemsContainer = document.getElementById('order-items');
+            orderItemsContainer.innerHTML = ''; 
+
+            let subtotal = 0;
+
+            currentOrder.forEach(item => {
+                const itemTotal = item.price * item.quantity;
+                subtotal += itemTotal;
+
+                const itemDiv = document.createElement('div');
+                itemDiv.innerHTML = `
+                    <span>${item.name} (x${item.quantity})</span>
+                    <span>${itemTotal.toFixed(2)} د.ع</span>
+                `;
+                orderItemsContainer.appendChild(itemDiv);
+            });
+
+            // تم حذف حساب الضريبة (tax)
+
+            const grandTotal = subtotal; // الإجمالي الكلي يساوي الإجمالي الفرعي
+            
+            document.getElementById('subtotal').textContent = subtotal.toFixed(2);
+            document.getElementById('tax').textContent = (0.00).toFixed(2); // لإبقاء العنصر فارغًا
+            document.getElementById('grand-total').textContent = grandTotal.toFixed(2);
+        }
+
+        function clearOrder() {
+            currentOrder = [];
+            updateOrderCart();
+            alert('تم مسح الطلب.');
+        }
+
+        function processOrder() {
+            if (currentOrder.length === 0) {
+                alert('الرجاء إضافة أصناف إلى الطلب أولاً.');
+                return;
+            }
+            
+            const grandTotal = parseFloat(document.getElementById('grand-total').textContent);
+            
+            const receipt = currentOrder.map(item => 
+                `${item.name} (x${item.quantity}): ${ (item.price * item.quantity).toFixed(2) } د.ع`
+            ).join('\n');
+            
+            alert(`
+                --- فاتورة مطعم شموسة ---
+                ${receipt}
+                ------------------
+                الإجمالي الكلي: ${grandTotal.toFixed(2)} د.ع
+                (الأسعار شاملة الخدمة والضريبة)
+                
+                تمت معالجة الطلب بنجاح!
+            `);
+            
+            clearOrder();
+        }
+
+        window.onload = renderProducts;
+    </script>
+</body>
+</html>
